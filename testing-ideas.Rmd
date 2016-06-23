@@ -1,0 +1,79 @@
+---
+title: "PlantPhys with Dr. Danny"
+author: "Susan Bush, Danny Kaplan"
+date: "June 22, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+# library(printr)
+```
+
+## Reading the "raw" data
+
+The data have been stored by the FANCY plate reader in a spreadsheet-like file, called CSV format. We're going to read from that file to create an object in R that contains the data.
+
+Note: It's bad practice to do excel kinds of things, like adding up a column in your data. Your data are sacred. Don't muck about with them, unless you want to be doing scientific fraud. In which case, take Psych 308.
+
+```{r}
+library(ggplot2)
+library(tidyr)
+my_data_folder <- "~/Documents/Mac/2015-2016 school year/PlantPhys Fall15/L04.big data lab/"
+my_data_file <- "WildSpecies_ColdRoots.csv"
+
+# when you save your data to CSV
+# write.csv(dataframe, file = "me.csv", row.names = FALSE)
+
+Roots <- read.csv(paste0(my_data_folder, my_data_file), row.names = 1)
+```
+
+We'll clean things up a little bit. Like change the names of the columns.
+```{r}
+names(Roots) <- gsub("root", "day", names(Roots))
+```
+
+# The data look like this
+
+```{r echo = FALSE}
+head(Roots, 10)
+```
+
+# What have we got?
+
+Compare Day 6 length for the different plants
+
+```{r}
+Roots %>%
+  ggplot(aes(x = day6)) + geom_density(fill = "gray", color = NA)
+```
+
+For the different plates:
+```{r}
+Roots %>% 
+  ggplot(aes(x = day6)) + geom_histogram() + facet_grid( spp ~ trt)
+```
+
+
+# What if we condense (reduce) the data?
+
+```{r}
+Summary <-
+  Roots %>%
+  select(trt, plate, spp, day6) %>%
+  group_by(trt, spp) %>%
+  summarise(typical = mean(day6, na.rm = TRUE), stdev = sd(day6, na.rm = TRUE) / sqrt(n()))
+```
+
+Make a graph
+```{r}
+Summary %>%
+  ggplot(aes(x = spp, y = typical, fill = spp)) + 
+  geom_bar(stat = "identity", alpha = .2) + 
+  geom_errorbar(aes(ymax = typical + 2 * stdev, ymin = typical - 2 * stdev), width = .1) + 
+  geom_point(data = Roots, aes(x = spp, y = day6), alpha = .3) +
+  facet_grid( ~ trt)
+```

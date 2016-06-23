@@ -1,0 +1,106 @@
+---
+title: 'Big Data Lab: Phenotype Data'
+output: word_document
+---
+
+Today we will work with a dataset showing tomato root growth in wild tomato species at "room temperature" and cold temperature (25degC and 12degC, respectively). Tomato seedlings were grown on agar plates and their roots were photographed each day, then measured using ImageJ.  You will be analyzing the data about their root growth to help us learn more about how the different species respond to cold treatments. 
+
+```{r}
+library(ggplot2)
+library(reshape2)
+setwd("~/Documents/Mac/PlantPhys Fall15/L04.big data lab/")
+```
+
+First let's look at the data
+
+```{r}
+roots <- read.csv("WildSpecies_ColdRoots.csv", row.names = 1)
+head(roots)[, 1:6]
+names(roots)
+```
+
+
+Next, let's visualize the data. 
+
+```{r}
+pairs(roots[, 5:10])
+hist(roots$root1)
+hist(roots$root2)
+plot(roots$dayGerm, roots$root2)
+boxplot(roots$trt, roots$root2) # what are the different treatment groups?
+```
+Using basic R commands, it's hard to get very complex with plotting the data. However, in order to use the "ggplot2" package, we first need to reshape the data so there is only one observation per line in the dataframe.
+
+Let's melt the data. "id.vars" are the variables that indicate unique observations.
+
+```{r}
+rm <- melt(roots[, 1:16], id.vars = c("spp", "plate", "trt", "dayGerm")) # we will only use the data columns to melt
+head(rm)
+tail(rm)
+```
+
+How can we look at a subset of data?
+
+```{r}
+rm[rm$spp == "pim" & rm$plate == "P20", ]
+subset(rm, spp == "pim" & plate == "P20")
+```
+
+You can create a new dataframe from these subsets, too.
+
+```{r}
+rm.day2 <- subset(rm, variable == "root2")
+head(rm.day2)
+summary(rm.day2)
+rm.day2 <- rm.day2[!is.na(rm.day2$value), ] # what is this command doing?
+```
+
+Look over the entire roots dataframe. If we were to use only a single day to summarize the findings, which day would you choose? Subset the rm data to include only your selected day.  In the next plots, use only your subsetted data of choice.  
+
+Now we're ready to plot using ggplot. First we'll make a boxplot. You should run each of these commands one at a time, to see the impact of each function.
+
+```{r}
+p <- ggplot(rm.day2, aes(x = spp, y = value, fill = spp))
+p <- p + geom_boxplot()
+p 
+p <- p + scale_fill_manual(values = c("red", "darkorange", "goldenrod", "yellow", "green", 
+                                      "darkgreen", "blue", "magenta", "purple", "gray"))
+p <- p + theme_bw()
+p <- p + theme(axis.text.x = element_text(size = 12))
+p <- p + theme(axis.text.x = element_text(angle = 45))
+p <- p + labs(x = "Wild tomato species", y = "Root length (mm)\nDay 2 after germination", fill = "Species")
+p <- p + guides(fill = "none")
+p <- p + facet_grid(trt~.)
+p <- p + facet_grid(.~trt)
+p
+```
+
+Awesome. Let's work on summarizing the data briefly, so rather than plotting raw values, we can use fitted values from a linear model. Before fitting the linear model, we will set the "reference" levels for each important variable.
+
+```{r}
+summary(rm.day2)
+rm.day2$spp <- relevel(rm.day2$spp, ref = "lyc")
+rm.day2$trt <- relevel(rm.day2$trt, ref = "ctrl")
+mod1 <- lm(value ~ spp*trt, data = rm.day2)
+summary(mod1)
+```
+
+Examine this data table.  What do the asterisks mean? What do the P-values mean? What is the row "Intercept"? What does the row "trtcold" mean?
+
+Next we will convert this table into something we can work with! The intercept estimate needs to be added to each other estimate, because, for example, a spparc value of -12.41 is relative to the Intercept value; spparc actually has a value of 27.3 - 12.41 = 14.9.  Similarly, we need to add the "trtcold" value to each other "cold" estimate.
+
+```{r}
+lm.table <- data.frame(summary(mod1)$coefficients)
+names(lm.table) <- c("value", "stder", "tval", "pval")
+lm.table$value[2:11] <- lm.table$value[2:11] + lm.table$value[1]
+lm.table$value[12:20] <- lm.table$value[12:20] + lm.table$value[11]
+lm.table$trt <- c(rep("cntl", 10), rep("cold", 10))
+rownames(lm.table)[1] <- "spplyc"
+rownames(lm.table)[11] <- "spplyc:trtcold"
+lm.table$spp <- substring(rownames(lm.table), 4, 6)
+lm.table
+```
+
+Try making a graph of these estimated mean values, plus the standard errors.  You will want to use functions like geom_point() and geom_errorbar().  geom_errorbar() requires the additional aes() components of ymin and ymax.  It's easy to set these: use ymin = value-stder and ymax = value+stder.  
+
+Next, we want to make a reaction norm to see how growth changes in the two temperatures.  We need to create a dataframe that has one column each for control values, cold values, and species, as well as two columns that say all "cold" and all "cntl".  Use geom_segment() to create a reaction norm; use ?geom_segment for examples. 

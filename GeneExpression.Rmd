@@ -1,0 +1,122 @@
+---
+title: 'Big Data Lab: Gene Expression'
+output: pdf_document
+---
+
+**Identifying Gene Expression Profiles using RNAseq**
+
+Tomatoes are very sensitive to cold treatment and domesticated tomato plants (*Solanum lycopersicum*) will die quickly if exposed to prolonged cold temperatures. However, wild tomato species are adapted to very different environmental conditions. These adaptations may lead to differences in gene expression under stress, compared to domestic tomatoes. In this lab we will begin to address three biological questions:
+
+***Which genes are differentially expressed in the three tomato species* S. lycopersicum, S. arcanum, *and* S. habrochaites*?***
+
+***How does cold treatment change gene expression?* **
+
+***Are there cold-responsive genes that are specific to the wild tomatoes (*S.arcanum *and* S.habrochaites*)?***
+
+The primciple behind calling differentially expressed genes is the same as the more general hypotheses one would use for t-tests or ANOVA. We will call genes differentially expressed if the mean expression between treatments is larger than would be expected by chance, given the amount of variance among replicates within a treatment type. 
+
+In order to identify genes that are differentially expressed, we will identify genes that are statistically significantly differentially expressed between domestic tomato and the wild species. We will also look for differential expression between tomatoes growing at a control temperature of 25degC and at a colder temperature of 8degC. To find differentially expressed genes, we will be using an R software package called _edgeR_.  EdgeR assesses differential expression of RNAseq data using a negative binomial model to account for biological and technical variability between samples and biological replicates. 
+
+You will need to upload the dataset "ArcHabLyc_Cold_RawCounts.csv" to your RStudio account. The file "ArcHabLyc_Cold_RawCounts.csv" containes the all tomato genes and their associated counts for all bioreps of the three tomato species grown at 25degC and 8degC. 
+
+
+
+
+
+**Part 1: Analysis of Biological Replicates**
+
+
+RNA-seq experiments are usually performed with biological replicates (bioreps) of samples. The use of bioreps helps to ensure that the results obtained are reproducible and can increase sensitivity in detecting differentially expressed genes. The RNA-seq experiments that are being analyzed here were done with three to four biological replicates each for domestic and wild tomato plants at two different temperatures. In this module, we will compare the bioreps by examining the distribution and correlation of counts.
+
+**Exercise:**
+
+  1. Use the _"Plot Histograms on RNAseq Counts.R"_ file to determine the distribution of counts for each biorep. 
+
+  2. Use the _"Correlation Plots for Count data.R"_ file to obtain a scatterplot and Pearson correlation coefficient for the comparison of bioreps. Compare multiple combinations of bioreps, including between samples.  
+
+**Questions**
+
+  **Question 1:** Describe the distribution of mRNA levels in the samples. How do the mRNA distributions for bioreps of the same sample compare? How do the mRNA distributions for bioreps of different samples (species or temperature) compare? What do these results imply about how species affects gene expression?
+
+  **Question 2:** What is the Pearson correlation coefficient between different samples or bioreps? Would you consider the variation between bioreps of the same samples to be acceptable? How do scatterplots for the Hab bioreps compare to scatterplots for Lyc bioreps? 
+
+  **Question 3:** Are there species differences in scatterplots between samples of different temperatures? What is a biological explanation for the difference? 
+
+
+
+**Part 2: Data Normalization**
+
+In this module, we will normalize the counts data and determine how normalization influences the overall distribution of gene expression data. Data normalization is used in the analysis of differential gene expression using statistical models to account for differences in sequencing depth between samples, differences in the lengths of genes across the genome, and differences in the distribution of counts between different samples. Two commonly performed normalization methods used to analyze RNA seq data are RPKM (Reads Per Kilobase exon length per Million reads mapped) and TMM (Trimmed Mean of M Values). We will only test TMM in lab since TMM normalization is required for _edgeR_. Normalized and unnormalized data will be visualized using boxplots.
+
+It is important to consider an appropriate measure of expression.  While some people favor RPKM for finding DE genes, it is better to normalize counts between samples using a different method (discussed below) and to not adjust for gene length. Why? 1) the number of reads is not always a linear function of gene length, and 2) dividing by gene length causes a loss of information. By RPKM, a gene of 1kB with 10 counts would be treated the same as a 100bp gene with 1 count, but clearly we are much more confident of the expression level when we have 10 counts instead of 1. This information is lost in RPKM. 
+
+Regarding normalization between samples, genes with very high expression levels can skew RPKM-type normalization. Consider two samples where gene expression is the same, except that in the first sample Rubisco is expressed at a very high level, taking up half the reads. In the second sample Rubisco is expressed at a lower level, accounting for 25% of the reads. By RPKM, all non-Rubisco genes will appear to be expressed more highly in the second sample because Rubisco "takes up" fewer reads. Methods such as TMM normalization can account for this.
+
+**Exercise:**
+
+  1. Use the _"TMM normalization and boxplots.R"_ file to to normalize the counts and create a MDS plot. Note that here you will need to set up your groups by species and temperature. Each group is a code of 7 letters: 3 of species, underscore, 3 of temperature treatment.
+
+  2. Download the TMM normalized data and the raw counts data. Using Excel (gasp!), average the count values of the bioreps for each gene and determine the fold-change difference by dividing the average genotype-temperature value by the average _S. lycopersicum_ 25degC value for each gene.
+  
+
+**Questions**
+
+  **Question 4:** Explain the boxplot graph. What does the box represent? What do the whiskers represent?
+
+  **Question 5:** Describe two lines of evidence that suggest that normalization has improved the reproducibility of the bioreps.
+
+  **Question 6:** Explain how normalization has affected the relative mRNA levels in the wild species _S. arcanum_ and _S. lycopersicum_ samples globally and at the level of several individual genes. 
+
+  **Question 7:** The MDS plot simplifies the many types of variability between the samples to two major axes of variability. We can see how similar or related different samples are using the MDS plot. Are your samples clustering in a logical way? Are any samples outliers?
+
+
+
+**Part 3: Set up Differential Expression Treatments and Estimate the Common Dispersion Parameter**
+
+Statistical methods to determine differential expression identify expression differences between two or more treatments. In the example explored in this module we identify genes that are differentially expressed between two genotypic treatments. Treatments, however, could be considered different cell types or tissues, different time points, or different stimuli. Replicates are grouped by treatment type.
+
+Statistically significant differential expression is assessed based on variance both within and between treatments. There are two types of variance in between replicate RNA samples - technical variance and biological variance. Technical variance usually decreases as the number of total gene counts increases. Biological variance, however, will not change even if total library size increases. A reliable estimate of the Biological Coefficient of Variation (BCV) is required for realistic assessment of differential expression in RNA-seq experiments. Dispersion or spread describes how “squeezed” or “broad” a distribution is. In a negative binomial distribution, the BCV is the square root of the dispersion of the negative binomial distribution. You will calculate the common tagwise dispersion in this module. The use of this common tagwise (or gene-specific) dispersion is necessary to allow genes whose expression is consistent between replicates to be ranked more highly than genes that are not. In addition, tagwise dispersion is necessary in RNAseq experiments in order for differential expression to not be driven by outliers.
+
+**Exercise:**
+
+  1. Use the _"Tagwise Dispersion on counts data.R"_" file. 
+  2. You will obtain a graph which plots the Biological Coefficient of Variation (BCV) on the y-axis relative to gene expression on the x-axis. This plot is used to obtain a common tagwise dispersion estimate for all gene counts (red line). An empirical Bayes strategy is then used to squeeze the dispersion of all genes towards this common dispersion. In the next section, we will explore statistical significance using an Empirical Bayes p-value and a False Discover Rate (FDR). 
+  
+**Questions**
+
+  **Question 8:** What is the negative binomial model dispersion parameter for these RNAseq libraries? What is the relationship between the negative binomial dispersion parameter and the BCV? 
+  
+  **Question 9:** Using the plot obtained, how does the BCV change depending on whether genes are lowly expressed or highly expressed? 
+  
+  **Question 10:** At what value of BCV was the common dispersion estimated?
+  
+  **Question 11:** Would you prefer to use tagwise, trended, or common dispersion to calculate gene expression?
+
+
+
+**Part 4: Identification of Differentially Expressed Genes at Different FDR thresholds**
+
+In EdgeR differentially expressed genes can be identified using thresholds based on the empirical Bayes p-value or the False Discovery Rate (FDR). The FDR determines the number of false positives over the number called significant (Benjamani and Hochberg, 1995). Different numbers of genes that are considered significantly upregulated or downregulated can be obtained depending on these thresholds.
+
+**Exercise**
+
+  1. Use the _"Get number of DE genes based on FDR.R"_ file. 
+  2. Ensure the treatments have been appropriately set.
+  3. Specify the False Discovery Rate (FDR) threshold to identify differentially expressed genes. 
+  
+**Questions**
+
+  **Question 12:** What does up-regulated and down-regulated mean? Note that the data is log(2) transformed, so values of -1 and 1 indicate 2-fold down-regulation and up-regulation, respectively.
+  
+  **Question 13:** How do you expect the p-value to change with the FDR (i.e., is there a direct relationship?)
+  
+  **Question 14:** Determine how many genes are up-regulated and down-regulated with the following FDR values: 0.05, 0.01, 0.001, 0.0001. 
+  
+  **Question 15:** Explain why the number of differentially expressed genes changes with different FDR values.
+
+
+**Question 16:** How does the number of differentially expressed genes change with 2 fold vs. 4 fold change in gene expression with a FDR of 0.01? (note that 2-fold and 4-fold is not the same as log2(4)-fold and log2(2)-fold) Describe the changes using the table of differentially expressed genes calculated at different FDRs.
+
+**Question 17:** Using the top.annot file of annotated differentially expressed genes, describe the function of these 10 most differentially expressed genes.
+
+**Question 19:** Try and repeat this exercise using a model including temperature as a variable of interest. You can also try a species*temperature interaction model!

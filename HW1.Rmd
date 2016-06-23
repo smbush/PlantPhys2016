@@ -1,0 +1,106 @@
+
+---
+title: "Project Intro"
+author: "Susan Bush"
+date: "June 23, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+library(dplyr)
+
+```
+
+## Intro to the Project
+
+We're going to do a "big data" project, or a project that takes advantage of some of the genomic or large-scale phenotypic or geographic or other plant science data that is publically available. To facilitate the data analysis you'll do on your own data of interest, we'll have 5 homework assignments to walk you through data analysis in RStudio. 
+
+Open your RStudio server at [rstudio.macalester.edu](http://rstudio.macalester.edu). You should be able to login with your Mac email and password. To run commands, you can type in the **Console** window. You can also save your code (a _great_ idea!) by opening a new R Script or R Markdown document, in the upper left hand corner. Everything you type in the text editor window can be saved and re-opened the next time you come back to your data analysis. For more information on using R Markdown, check out [this page.](http://rmarkdown.rstudio.com/authoring_quick_tour.html)
+
+Before we start, navigate to your Home folder in the **Files** window in the lower right hand corner. Make a new folder called "PlantPhys". Click to enter that folder; this is where you'll be working and storing your data. 
+
+Below, we will walk through some work in RStudio. You can follow along by typing these commands in your own RStudio and then running the commands. When you are done working, save your R Script or R Markdown file in your "PlantPhys" folder.
+
+Here, we will open the file and view the data therein. Today we will work with a dataset showing tomato root growth in wild tomato species at "room temperature" and cold temperature (25degC and 12degC, respectively). Tomato seedlings were grown on agar plates and their roots were photographed each day, then measured using ImageJ.  You will be analyzing the data about their root growth to help us learn more about how the different species respond to cold treatments. 
+
+```{r}
+Roots <- read.csv("WildSpecies_RootGrowth_062316.csv")
+head(Roots)
+
+# how to open a file from google drive?
+test <- read.csv("https://raw.githubusercontent.com/smbush/PlantPhys2016/master/WildSpecies_RootGrowth_062316.csv")
+head(test)
+
+```
+
+There are ways to view the data other than the `head()` function. You could simply type `Roots` in the console to print out the entire data set. You can also click on "Roots" in the **Environment** block on the upper-right hand of your RStudio console. For the same outcome, you can simply type `View(Roots)` into the console. 
+
+Now let's work on manipulating our data, or as it's called in R, our `Roots` "dataframe". 
+
+What are the names of the columns in the data? 
+```{r}
+names(Roots)
+```
+Great - but I don't like the names of columns 5 through 16. These aren't measurements of Root #1 and Root #2; instead this is root growth on Day 1 and Day 2. Let's rename the columns. 
+```{r}
+names(Roots) <- sub("root", "day", names(Roots))
+```
+_Note: If you want to learn more about a function like_ `sub`_, you can type_ `?sub` _into the console to open the Help window!_
+
+**Activity 1:** You should look at the names or the dataframe to confirm we've actually changed the column names. 
+
+Next, let's start to visualize the data. Making graphs and plots of our data is a _really_ great way to start to find relationships between different variables in the data. I included some basic plots, but feel free to modify the code you use to produce different plots of the `Roots` data!
+
+```{r}
+pairs(Roots[, 5:10])
+hist(Roots$day1)
+hist(Roots$day6)
+plot(Roots$day5, Roots$day1)
+boxplot(Roots$trt, Roots$day5, names = levels(Roots$trt)) 
+```
+
+**Activity 2:** What are each of these graphs telling us? Write out a sentence or two to simply explain what each graph demonstrates about the `Roots` data. 
+
+**Activity 3:** Create and interpret another graph from what's included above. 
+
+Terrific! The next thing we might want to do is change the data frame from being really wide (with many columns of data observations) to being much longer and narrower (with one observation per row, and many rows of data). Reformatting the data in this way (or "tidying up" the data) is often useful for further graphing or statistical applications. We'll use the function `gather()` from the `tidyr` package. 
+```{r}
+require(tidyr)
+rootsTidy <- gather(Roots, "Day", "RootLength", 5:16)
+head(rootsTidy)
+
+```
+
+**Activity 4:** What is different between `Roots` and `rootsTidy`? Compare the two data frames and check out the function `gather` and the `?gather` help page. What has changed in the `rootsTidy` dataframe from where we started?
+
+
+In any dataframe, including our newly gathered `rootsTidy` data, how can we look at a subset of data? This might be useful in making additional graphs or when we start doing stats. 
+
+```{r}
+
+rootsDays <- filter(rootsTidy, Day == "day1" | Day == "day3" | Day == "day5")
+summary(rootsDays)
+rootsP20 <- filter(rootsTidy, plate =="P20")
+head(rootsP20)
+filter(rootsTidy, spp == "pim", Day == "day2")
+
+```
+
+**Activity 5:** Look over the entire `Roots` or `rootsTidy` dataframe(s). If we were to use only a single day to summarize the findings, which day would you choose? Why do you make that choice? Filter the `rootsTidy` data to include only your selected day.  In the next homework, you will use only your subsetted data of choice. Carry out the following code to save your data files from today. Then, save your filtered data as well! Make sure to give it an informative name.
+
+```{r}
+write.csv(Roots, file = "WildSpecies_RootGrowth.csv", row.names = FALSE)
+write.csv(rootsTidy, file = "WildSpecies_RootGrowth_Long.csv", row.names = FALSE)
+```
+
+Turn in your responses to the 5 **Activities** by classtime next Wednesday. You can choose to turn in an R markdown document or R script over email. Please do not copy and paste your code into a Word document!
+
+See you next time for more data analysis!  
+
+
+
+
+
+

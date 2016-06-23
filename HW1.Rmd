@@ -23,15 +23,15 @@ Before we start, navigate to your Home folder in the **Files** window in the low
 
 Below, we will walk through some work in RStudio. You can follow along by typing these commands in your own RStudio and then running the commands. When you are done working, save your R Script or R Markdown file in your "PlantPhys" folder.
 
+## Start with the data
+
 Here, we will open the file and view the data therein. Today we will work with a dataset showing tomato root growth in wild tomato species at "room temperature" and cold temperature (25degC and 12degC, respectively). Tomato seedlings were grown on agar plates and their roots were photographed each day, then measured using ImageJ.  You will be analyzing the data about their root growth to help us learn more about how the different species respond to cold treatments. 
 
 ```{r}
-Roots <- read.csv("WildSpecies_RootGrowth_062316.csv")
+filepath <- 
+  "https://raw.githubusercontent.com/smbush/PlantPhys2016/master/WildSpecies_RootGrowth_062316.csv"
+Roots <- read.csv(filepath)
 head(Roots)
-
-# how to open a file from google drive?
-test <- read.csv("https://raw.githubusercontent.com/smbush/PlantPhys2016/master/WildSpecies_RootGrowth_062316.csv")
-head(test)
 
 ```
 
@@ -51,6 +51,8 @@ _Note: If you want to learn more about a function like_ `sub`_, you can type_ `?
 
 **Activity 1:** You should look at the names or the dataframe to confirm we've actually changed the column names. 
 
+## Do some basic data visualization
+
 Next, let's start to visualize the data. Making graphs and plots of our data is a _really_ great way to start to find relationships between different variables in the data. I included some basic plots, but feel free to modify the code you use to produce different plots of the `Roots` data!
 
 ```{r}
@@ -64,6 +66,8 @@ boxplot(Roots$trt, Roots$day5, names = levels(Roots$trt))
 **Activity 2:** What are each of these graphs telling us? Write out a sentence or two to simply explain what each graph demonstrates about the `Roots` data. 
 
 **Activity 3:** Create and interpret another graph from what's included above. 
+
+## Tidy up the data
 
 Terrific! The next thing we might want to do is change the data frame from being really wide (with many columns of data observations) to being much longer and narrower (with one observation per row, and many rows of data). Reformatting the data in this way (or "tidying up" the data) is often useful for further graphing or statistical applications. We'll use the function `gather()` from the `tidyr` package. 
 ```{r}
@@ -95,6 +99,7 @@ write.csv(Roots, file = "WildSpecies_RootGrowth.csv", row.names = FALSE)
 write.csv(rootsTidy, file = "WildSpecies_RootGrowth_Long.csv", row.names = FALSE)
 ```
 
+## Homework 
 Turn in your responses to the 5 **Activities** by classtime next Wednesday. You can choose to turn in an R markdown document or R script over email. Please do not copy and paste your code into a Word document!
 
 See you next time for more data analysis!  

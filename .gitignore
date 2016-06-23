@@ -24,3 +24,7 @@ vignettes/*.pdf
 *.knit.md
 .Rproj.user
 PlantPhys2016.Rproj
+HW1.html
+HW1.pdf
+WildSpecies_RootGrowth_Long.csv
+WildSpecies_RootGrowth.csv

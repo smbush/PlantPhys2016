@@ -13,7 +13,7 @@ library(dplyr)
 
 ```
 
-## Intro to the Project
+## Intro to the Project!!
 
 We're going to do a "big data" project, or a project that takes advantage of some of the genomic or large-scale phenotypic or geographic or other plant science data that is publically available. To facilitate the data analysis you'll do on your own data of interest, we'll have 5 homework assignments to walk you through data analysis in RStudio. 
 
